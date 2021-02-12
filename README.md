@@ -6,5 +6,6 @@ This application was written by Yazmin Reyes. Its objective is to visualize elec
                                                                         <b>R Documentation (shinyjs):</b> https://www.rdocumentation.org/packages/shinyjs/versions/0.6 <br/>
                                                                         <b>R Documentation (plot_usmap):</b> https://www.rdocumentation.org/packages/usmap/versions/0.5.2/topics/plot_usmap <br/>
                                                                         <b>R Documentation (ggplot2):</b> https://www.rdocumentation.org/packages/ggplot2/versions/3.3.3 <br/>
-                                                                        References to <b>Stack Overflow</b> and <b>Piazza</b> for specific R/Shiny/data usage <br/><br/>
+                                                                        References to <b>Stack Overflow</b> and <b>Piazza</b> for specific R/Shiny/data usage <br/>
+                                                                        To run the game, download the app.r file and run on R Studio. If the data file is not available, download the CSV and change directory. <br/><br/>
                                                                         Last Revised: 2/12/2021
