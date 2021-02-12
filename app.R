@@ -93,6 +93,7 @@ generationScale <- function(sReactive, sReactive2){
 
 # function to generate the top limit for graph
 maxLimit <- function(sReactive, sReactive2){
+  # check for max from both inputs
   e_source <- sReactive()
   e_source2 <- sReactive2()
   return( max(c(e_source$GENERATION..Megawatthours..x, e_source2$GENERATION..Megawatthours..x)))
@@ -255,7 +256,9 @@ server <- function(input, output, session) {
   
   # update UI according to available data for page 2 comparison page
   observeEvent(input$loc1,{
+    # only applies if heat map mode is not activated
     req(!input$hm1)
+    # update the choices for select input based on available data
     updateSelectInput(session, "en1", choices = c("All", levels(factor(subset(simple_elec, STATE==states_map[states==input$loc1])$ENERGY.SOURCE))),
                       selected = "All")
     updateSelectInput(session, "yr1", choices = c("All", levels(factor(subset(simple_elec, STATE==states_map[states==input$loc1])$YEAR))),
@@ -264,12 +267,14 @@ server <- function(input, output, session) {
   
   observeEvent(input$loc2,{
     req(!input$hm1)
+    # update the choices for select input based on available data
     updateSelectInput(session, "en2", choices = c("All", levels(factor(subset(simple_elec, STATE==states_map[states==input$loc2])$ENERGY.SOURCE))),
                       selected = "All")
     updateSelectInput(session, "yr2", choices = c("All", levels(factor(subset(simple_elec, STATE==states_map[states==input$loc2])$YEAR))),
                       selected = "All")
   }, ignoreInit = TRUE)
  
+  # update the year based off of energy input
    observeEvent(input$en1,{
     req(!input$hm1)
     updateSelectInput(session, "yr1", choices = 
@@ -289,17 +294,21 @@ server <- function(input, output, session) {
    # checks to make sure heat map isn't on and generates dataframe to plot according to location, energy, and year
    stateReactive1 <- reactive({ 
     req(!input$hm1)
+     # create a total dataframe
     tot <- subset(simple_elec, (STATE %in% states_map[states==input$loc1]))
     tot <- aggregate(GENERATION..Megawatthours. ~ YEAR + ENERGY.SOURCE, tot, sum)
+    # create a specific data frame based off of inputs
     specific <- subset(tot, (ENERGY.SOURCE %in% if(input$en1 == "All"){levels(energy_sources$ENERGY.SOURCE)}else{input$en1}) &
                          (YEAR %in% if(input$yr1 == "All"){c(1990:2019)}else{input$yr1}))
     tot <- subset(tot, ENERGY.SOURCE == "Total")
+    # merge by the year to do calculations later
     merge(specific, tot, by = "YEAR")
   })
   
    # checks to make sure heat map isn't on and generates dataframe to plot according to location, energy, and year
   stateReactive2 <- reactive({ 
     req(!input$hm1)
+    # calculate total and specific data frame to merge for calculation later
     tot <- subset(simple_elec, (STATE %in% states_map[states==input$loc2]))
     tot <- aggregate(GENERATION..Megawatthours. ~ YEAR + ENERGY.SOURCE, tot, sum)
     specific <- subset(tot, (ENERGY.SOURCE %in% if(input$en2 == "All"){levels(energy_sources$ENERGY.SOURCE)}else{input$en2}) &
@@ -309,8 +318,10 @@ server <- function(input, output, session) {
     })
   
   # checks to make sure heat map mode is on to make changes in map with energy and year 
+  # https://stackoverflow.com/questions/1299871/how-to-join-merge-data-frames-inner-outer-left-right
   mapReactive1 <- reactive({
     req(input$hm1)
+    # collects specific data frame for map output and merges
     filtered <- subset(map_energy, ENERGY.SOURCE == input$en1 & YEAR == input$yr1)
     tot <- subset(map_energy, ENERGY.SOURCE == "Total" & YEAR == input$yr1)
     merge(filtered, tot, by = "fips")
@@ -319,40 +330,44 @@ server <- function(input, output, session) {
   # checks to make sure heat map mode is on to make changes in map with energy and year 
   mapReactive2 <- reactive({
     req(input$hm1)
+    # collects specific data frame for map output and merges
     filtered <- subset(map_energy, ENERGY.SOURCE == input$en2 & YEAR == input$yr2)
     tot <- subset(map_energy, ENERGY.SOURCE == "Total" & YEAR == input$yr2)
     merge(filtered, tot, by = "fips")    
   })
   
+  # observeEvents - https://stackoverflow.com/questions/57553852/how-to-use-observeevent-with-a-checkbox-event-shiny
   # checks if heat map mode was triggered on/off to update UI accordingly
   observeEvent(input$hm1,{
     if(input$hm1){
+      # update the location inputs to U.S. and then disable for map outputs
       updateSelectInput(session, "loc1", choices = states, selected = "United States")
       shinyjs::disable(id = "loc1")
       updateSelectInput(session, "loc2", choices = states, selected = "United States")
       shinyjs::disable(id = "loc2")
-      
+      # hide and show different UI elements
       shinyjs::hide(id="plotGrid1")
       shinyjs::show(id="mapSpace1")
       shinyjs::hide(id="plotGrid2")
       shinyjs::show(id="mapSpace2")
-      
+      # update the kind of choices for energy and year
       updateSelectInput(session, "en1", choices = n_energies, selected = "Coal")
       updateSelectInput(session, "yr1", choices = n_years)
       updateSelectInput(session, "en2", choices = n_energies, selected = "Hydro")
       updateSelectInput(session, "yr2", choices = n_years)
     }
     else{
+      # update the location inputs to U.S. and then disable for map outputs
       updateSelectInput(session, "loc2", choices = states, selected = "United States")
       shinyjs::enable("loc1")
       updateSelectInput(session, "loc2", choices = states, selected = "Illinois")
       shinyjs::enable("loc2")
-      
+      # hide and show UI elements
       shinyjs::hide(id="mapSpace1")
       shinyjs::show(id="plotGrid1")
       shinyjs::hide(id="mapSpace2")
       shinyjs::show(id="plotGrid2")
-      
+      # update the choices once returning from heat mode on
       updateSelectInput(session, "en1", choices = all_energies, selected = "All")
       updateSelectInput(session, "yr1", choices = all_years, selected = "All")
       updateSelectInput(session, "en2", choices = il_energies, selected = "All")
@@ -436,6 +451,7 @@ server <- function(input, output, session) {
     req(!input$hm1)
     e_source <- stateReactive1()
     e_source <- subset(e_source, ENERGY.SOURCE.x != "Total")
+    # calculate percent
     e_source$GENERATION.PERCENT <- round(e_source$GENERATION..Megawatthours..x/e_source$GENERATION..Megawatthours..y,2)
     ggplot(e_source, aes(x=as.Date(as.character(YEAR), "%Y"), y=GENERATION.PERCENT, fill=factor(ENERGY.SOURCE.x, levels = order2))) + geom_bar( stat="identity") + labs(x = "Year", y = paste("% of", abb_map[state1==input$loc1], "Generation"), title = paste("Source % of Total Electrical Power Generation -", input$loc1)) +
       scale_y_continuous(labels = scales::percent_format()) + scale_x_date(date_labels="%Y") + scale_fill_manual(values = colorm, name = "Energy Source Type") +
@@ -448,7 +464,7 @@ server <- function(input, output, session) {
   output$plot7 <- renderPlot({
     req(!input$hm1)
     e_source <- stateReactive1()
-    # e_source <- subset(e_source, ENERGY.SOURCE.x != "Total")
+    # check if one point needs to be graphed 
     if(nrow(e_source)==1 | input$yr1 != "All"){
       ggplot(e_source, aes(x=as.Date(as.character(YEAR), "%Y"), y=GENERATION..Megawatthours..x, group=ENERGY.SOURCE.x, color=ENERGY.SOURCE.x)) + geom_point(shape=19, size=3) + labs(x = "Year", y = "Generation (MWh)", title = paste("Electrical Power Generation Amount by Source -", input$loc1)) + 
         scale_color_manual(name = "Energy Source Type", values = colorm )  +  scale_y_continuous(labels = generationScale(stateReactive1, stateReactive2))  + scale_x_date(date_labels="%Y") +
@@ -469,6 +485,7 @@ server <- function(input, output, session) {
     e_source <- stateReactive1()
     e_source$GENERATION.PERCENT <- round(e_source$GENERATION..Megawatthours..x/e_source$GENERATION..Megawatthours..y,2)
     e_source <- subset(e_source, ENERGY.SOURCE.x != "Total")
+    # check if one point needs to be graphed 
     if(nrow(e_source)==1 || input$yr1 != "All"){
       ggplot(e_source, aes(x=as.Date(as.character(YEAR), "%Y"), y=GENERATION.PERCENT, group=ENERGY.SOURCE.x, color=ENERGY.SOURCE.x)) + geom_point(shape=19, size=3) + labs(x = "Year", y = paste("% of", abb_map[state1==input$loc1], "Generation"), title = paste("Source % of Total Electrical Power Generation -", input$loc1)) + 
         scale_color_manual(name = "Energy Source Type", values = colorm)  + coord_cartesian(ylim = c(0, 1)) + scale_y_continuous(labels = scales::percent_format()) + scale_x_date(date_labels="%Y") + 
@@ -529,7 +546,9 @@ server <- function(input, output, session) {
   output$plot12 <- renderPlot({
     req(!input$hm1)
     e_source <- stateReactive2()
+    # calculate percent
     e_source$GENERATION.PERCENT <- round(e_source$GENERATION..Megawatthours..x/e_source$GENERATION..Megawatthours..y,2)
+    # check if one point needs to be graphed 
     e_source <- subset(e_source, ENERGY.SOURCE.x != "Total")
     if(nrow(e_source)==1 | input$yr2 != "All"){
       ggplot(e_source, aes(x=as.Date(as.character(YEAR), "%Y"), y=GENERATION.PERCENT, group=ENERGY.SOURCE.x, color=ENERGY.SOURCE.x)) + geom_point(shape=19, size=3) + labs(x = "Year", y = paste("% of", abb_map[state1==input$loc2], "Generation"), title = paste("Source % of Total Electrical Power Generation -", input$loc2)) + 
@@ -559,6 +578,7 @@ server <- function(input, output, session) {
   output$map2 <- renderPlot({
     req(input$hm1)
     map_data <- mapReactive1()
+    # calculate percent
     map_data$GENERATION.PERCENT <- round(map_data$GENERATION..Megawatthours..x/map_data$GENERATION..Megawatthours..y,2)
     plot_usmap(region="states", data=map_data, values = "GENERATION.PERCENT") + labs(title = paste(input$en1, "% of Total Electrical Generation per State in", input$yr1)) + 
       scale_fill_continuous(low = "white", high=colorm[input$en1], name = paste(input$en1, "Generation (%)"),  limits = c(0,1), label = scales::percent_format()) +
@@ -586,6 +606,7 @@ server <- function(input, output, session) {
   })
   
   # page 1 table
+  # format numeric values with commas
   output$tab1 <- DT::renderDataTable(
     DT::datatable({    percent_energy <- subset(energy_sources, select = -c(GENERATION.PERCENT))
                        val <- comma(percent_energy$GENERATION..Megawatthours.)
@@ -607,6 +628,7 @@ server <- function(input, output, session) {
   )
   
   # page 1 table
+  # format percent values with % 
   output$tab2 <- DT::renderDataTable(
     DT::datatable({ 
       percent_energy <- subset(energy_sources, select = -c(GENERATION..Megawatthours.))
