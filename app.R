@@ -10,8 +10,7 @@ library(usmap)
 library(reshape2)
 
 # read in and clean data
-setwd("/Users/nice/Documents/CS424/Project1")
-all_elec <- read.table(file = "annual_generation_state.csv", sep = ",", header = TRUE) 
+all_elec <- read.table(file = "https://www.evl.uic.edu/aej/424/annual_generation_state.csv", sep = ",", header = TRUE) 
 # convert strings into numeric values
 all_elec$GENERATION..Megawatthours. <- as.numeric(gsub(",", "", all_elec$GENERATION..Megawatthours.))
 # remove empty rows
