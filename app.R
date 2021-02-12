@@ -232,7 +232,8 @@ ui <- dashboardPage(
                                                                  <b>STATE:</b> the state/region the data was collected in, <br/>
                                                                  <b>TYPE.OF.PRODUCER</b>: the type of electrical power producer, <br/> 
                                                                  <b>ENERGY.SOURCE:</b> the type of energy source, <br/>
-                                                                 <b>GENERATION..Megawatthours.:</b> the amount of generation")),
+                                                                 <b>GENERATION..Megawatthours.:</b> the amount of generation <br/><br/>
+                                                                 The data was cleaned for further exploration in R and Shiny.")),
               box(title="About the Application", solidHeader=TRUE, HTML("This application was written by Yazmin Reyes. Its objective is to visualize electrical power generation across the United States from 1990-2020. It was written in R and Shiny with the assistance of the following: <br/>
                                                                         <b>Professor Andrew Johnson's Shiny App Example:</b> https://www.evl.uic.edu/aej/424/evlWeatherForR.zip <br/>
                                                                         <b>Shiny Dashboard Library:</b> https://rstudio.github.io/shinydashboard/ <br/>
